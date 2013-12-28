@@ -3,7 +3,7 @@ everyauth
 
 Authentication and authorization (password, facebook, & more) for your node.js Connect and Express apps.
 
-There is a NodeTuts screencast of everyauth [here](http://nodetuts.com/tutorials/26-starting-with-everyauth.html#video)
+There is a NodeTuts screencast of everyauth [here](http://vimeo.com/26532298)
 
 There is also a Google Groups (recently created)
 [here](http://groups.google.com/group/everyauth) to post questions and discuss
@@ -52,6 +52,10 @@ So far, `everyauth` enables you to login via:
       <td> <a href="http://github.com/wnadeau">Winfred Nadeau</a>
     <tr> <td> <img src="https://github.com/bnoguchi/everyauth/raw/master/media/mendeley.ico" style="vertical-align:middle"> Mendeley
        <td> <a href="https://github.com/edy-b">Eduard Baun</a>
+    <tr> <td> <img src="https://github.com/Datahero/everyauth/raw/express3/media/stripe.ico" style="vertical-align:middle;" width="16px" height="16px"> Stripe
+       <td> <a href="https://github.com/jzabel">Jeff Zabel</a> from <a href="http://www.datahero.com"> Datahero </a>
+    <tr> <td> <img src="https://github.com/Datahero/everyauth/raw/express3/media/salesforce.ico" style="vertical-align:middle"> Salesforce
+       <td> <a href="https://github.com/jzabel">Jeff Zabel</a> from <a href="http://www.datahero.com"> Datahero </a>
   </tbody>
   <tbody id=misc>
     <tr> <td> <img src="https://github.com/bnoguchi/everyauth/raw/master/media/box.ico" style="vertical-align:middle"> Box.net             <td>
@@ -79,44 +83,27 @@ So far, `everyauth` enables you to login via:
     $ npm install everyauth
 
 ## Quick Start
-Using everyauth comes down to just 2 simple steps if using Connect
-or 3 simple steps if using Express:
+
+Incorporate everyauth into your express app in just 2 easy steps.
 
 1. **Choose and Configure Auth Strategies** - Find the authentication strategy
    you desire in one of the sections below. Follow the configuration
    instructions.
-2. **Add the Middleware to Connect**
+2. **Add the Middleware to Express**
 
     ```javascript
     var everyauth = require('everyauth');
     // Step 1 code goes here
 
     // Step 2 code
-    var connect = require('connect');
-    var app = connect(
-        connect.bodyParser()
-      , connect.cookieParser()
-      , connect.session({secret: 'mr ripley'})
-      , everyauth.middleware()
-      , connect.router(routes)
-    );
+    var express = require('express');
+    var app = express();
+    app
+      .use(express.bodyParser())
+      .use(express.cookieParser('mr ripley'))
+      .use(express.session())
+      .use(everyauth.middleware(app));
     ```
-3. **Add View Helpers to Express**
-
-    ```javascript
-    // Step 1 code
-    // ...
-    // Step 2 code
-    // ...
-
-    // Step 3 code
-    everyauth.helpExpress(app);
-
-    app.listen(3000);
-    ```
-
-    For more about what view helpers `everyauth` adds to your app, see the section
-    titled "Express Helpers" near the bottom of this README.
 
 ## Example Application
 
@@ -2339,6 +2326,169 @@ object whose parameter name keys map to description values:
 
 ```javascript
 everyauth.box.configurable();
+```
+
+### Shopify
+
+```javascript
+var everyauth = require('../index') //require('everyauth')
+  , express = require('express');
+
+everyauth
+  .shopify
+    .apiHost('https://SHOPNAME.myshopify.com') 
+    .oauthHost('https://SHOPNAME.myshopify.com') 
+    .appId('YOUR APP API KEY')
+    .appSecret('YOUR APP SHARED SECRET')
+
+    //Shopify requires scope, even if you only want to use default scope
+    .scope('read_products,write_themes') 
+    .findOrCreateUser( function (sess, accessToken, accessSecret, shopifyUser) {
+      // find or create user logic goes here
+    })
+    .redirectPath("/");
+
+var app = express();
+
+app.use(express.bodyParser())
+  .use(express.cookieParser('whodunnit'))
+  .use(express.session())
+  .use(everyauth.middleware(app));
+
+app.get('/', function (req, res) {
+
+});
+
+app.listen(3000);
+```
+
+### Stripe
+
+```javascript
+var everyauth = require('everyauth')
+  , connect = require('connect');
+
+everyauth.stripe
+  .appId('YOUR CLIENT ID HERE')
+  .appSecret('YOUR CLIENT SECRET HERE')
+  .scope('read_only') // Defaults to read_only - can be set to 'read_write'.  See https://stripe.com/docs/connect/reference
+  .landing('login') //Defaults to login - can be set to 'register'.  See https://stripe.com/docs/connect/reference
+  .handleAuthCallbackError( function (req, res) {
+    // If a user denies your app, Stripe will redirect the user to
+    // /auth/facebook/callback?error=access_denied
+    // This configurable route handler defines how you want to respond to
+    // that.
+    // If you do not configure this, everyauth renders a default fallback
+    // view notifying the user that their authentication failed and why.
+  })
+  .findOrCreateUser( function (session, accessToken, accessTokenExtra, stripeUserMetadata) {
+    // find or create user logic goes here
+    // Return a user or Promise that promises a user
+    // Promises are created via
+    //     var promise = this.Promise();
+  })
+  .redirectPath('/');
+
+var routes = function (app) {
+  // Define your routes here
+};
+
+connect(
+    connect.bodyParser()
+  , connect.cookieParser()
+  , connect.session({secret: 'whodunnit'})
+  , everyauth.middleware()
+  , connect.router(routes);
+).listen(3000);
+```
+
+You can also configure more parameters (most are set to defaults) via
+the same chainable API:
+
+```javascript
+everyauth.stripe
+  .entryPath('/auth/stripe')
+  .callbackPath('/auth/stripe/callback')
+  .redirectPath('/auth/stripe');
+```
+
+If you want to see what the current value of a
+configured parameter is, you can do so via:
+
+```javascript
+everyauth.stripe.scope(); // undefined
+everyauth.stripe.entryPath(); // '/auth/stripe'
+```
+
+To see all parameters that are configurable, the following will return an
+object whose parameter name keys map to description values:
+
+```javascript
+everyauth.stripe.configurable();
+```
+
+### Salesforce
+
+```javascript
+var everyauth = require('everyauth')
+  , connect = require('connect');
+
+everyauth.salesforce
+  .appId('YOUR CLIENT ID HERE')
+  .appSecret('YOUR CLIENT SECRET HERE')
+  .scope('api refresh_token') // Is none are set, it defaults to 'id api refresh_token') - see http://wiki.developerforce.com/page/Digging_Deeper_into_OAuth_2.0_on_Force.com
+  .handleAuthCallbackError( function (req, res) {
+    // If a user denies your app, Salesforce will redirect the user to
+    // /auth/facebook/callback?error=access_denied
+    // This configurable route handler defines how you want to respond to
+    // that.
+    // If you do not configure this, everyauth renders a default fallback
+    // view notifying the user that their authentication failed and why.
+  })
+  .findOrCreateUser( function (session, accessToken, accessTokenExtra, salesforceUserMetadata) {
+    // find or create user logic goes here
+    // Return a user or Promise that promises a user
+    // Promises are created via
+    //     var promise = this.Promise();
+  })
+  .redirectPath('/');
+
+var routes = function (app) {
+  // Define your routes here
+};
+
+connect(
+    connect.bodyParser()
+  , connect.cookieParser()
+  , connect.session({secret: 'whodunnit'})
+  , everyauth.middleware()
+  , connect.router(routes);
+).listen(3000);
+```
+
+You can also configure more parameters (most are set to defaults) via
+the same chainable API:
+
+```javascript
+everyauth.salesforce
+  .entryPath('/auth/salesforce')
+  .callbackPath('/auth/salesforce/callback')
+  .redirectPath('/auth/salesforce');
+```
+
+If you want to see what the current value of a
+configured parameter is, you can do so via:
+
+```javascript
+everyauth.salesforce.scope(); // undefined
+everyauth.salesforce.entryPath(); // '/auth/salesforce'
+```
+
+To see all parameters that are configurable, the following will return an
+object whose parameter name keys map to description values:
+
+```javascript
+everyauth.salesforce.configurable();
 ```
 
 ## Configuring a Module

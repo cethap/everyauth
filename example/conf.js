@@ -116,4 +116,20 @@ module.exports = {
       consumerKey: 'Enter your consumer key here'
     , consumerSecret: 'Enter your consumer secret here'
   }
+  , shopify: {
+      appId: 'YOUR APP API KEY'
+    , appSecret: 'YOUR APP SHARED SECRET'
+    , scope: 'read_products,write_themes'
+  }
+  , stripe: {
+      appId: 'YOUR APP API KEY'
+    , appSecret: 'YOUR APP SHARED SECRET'
+    , scope: 'read_only'
+    , landing: 'login'
+  }
+  , salesforce: {
+      appId: 'YOUR APP API KEY'
+    , appSecret: 'YOUR APP SHARED SECRET'
+    , scope: 'id api refresh_token'
+  }
 };
